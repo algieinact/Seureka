@@ -93,25 +93,31 @@ if (!isset($_SESSION['user_id'])) {
 
         <!-- Content Section -->
         <section class="flex gap-12 flex-1">
-            <!-- Calendar Section -->
-            <div
-                class="w-1/3 bg-gray-800 border border-gray-100/20 p-6 rounded-lg shadow-lg backdrop-filter backdrop-blur-md bg-opacity-40">
-                <h2 class="text-xl font-semibold text-center mb-4">May</h2>
-                <div class="grid grid-cols-7 gap-2 text-center text-gray-300">
-                    <!-- Calendar Header -->
-                    <div>Mo</div>
-                    <div>Tu</div>
-                    <div>We</div>
-                    <div>Th</div>
-                    <div>Fr</div>
-                    <div>Sa</div>
-                    <div>Su</div>
-                    <!-- Calendar Days -->
-                    <div class="text-gray-400">01</div>
-                    <div class="text-gray-400">02</div>
-                    <div class="text-gray-400">03</div>
-                    <div class="bg-purple-500 text-white rounded-full">18</div>
-                    <!-- More dates -->
+            <div class="w-1/3 gap-12">
+                <div
+                    class=" bg-gray-800 border border-gray-100/20 p-6 rounded-lg shadow-lg backdrop-filter backdrop-blur-md bg-opacity-40 mb-6 min-h-80">
+                    <h2 class="text-xl font-semibold text-center mb-4">May</h2>
+                    <div class="grid grid-cols-7 gap-2 text-center text-gray-300">
+                        <!-- Calendar Header -->
+                        <div>Mo</div>
+                        <div>Tu</div>
+                        <div>We</div>
+                        <div>Th</div>
+                        <div>Fr</div>
+                        <div>Sa</div>
+                        <div>Su</div>
+                        <!-- Calendar Days -->
+                        <div class="text-gray-400">01</div>
+                        <div class="text-gray-400">02</div>
+                        <div class="text-gray-400">03</div>
+                        <div class="bg-purple-500 text-white rounded-full">18</div>
+                        <!-- More dates -->
+                    </div>
+                </div>
+                <!-- Your Community -->
+                <div
+                    class=" bg-gray-800 border border-gray-100/20 p-6 rounded-lg shadow-lg backdrop-filter backdrop-blur-md bg-opacity-40">
+                    <h1 class="text-xl font-semibold text-center mb-4">Your Community</h1>
                 </div>
             </div>
 
@@ -154,8 +160,6 @@ if (!isset($_SESSION['user_id'])) {
                 </div>
             </div>
         </section>
-
-
     </div>
     <!-- Footer Section -->
     <footer class="footer bg-black px-15 py-4">
