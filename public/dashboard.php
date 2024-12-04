@@ -84,6 +84,7 @@ if (!isset($_SESSION['user_id'])) {
             </div>
         </div>
     </nav>
+
     <div class=" mx-16 mt-4 mb-8 flex flex-col min-h-screen">
         <!-- Welcome Section -->
         <section class="mb-12 mt-4">
