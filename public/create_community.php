@@ -1,5 +1,8 @@
 <?php
 session_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.html');
     exit;
@@ -13,30 +16,45 @@ $success = "";
 
 // Handle Form Submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $name = $conn->real_escape_string($_POST['name']);
-    $description = $conn->real_escape_string($_POST['description']);
-    $location = $conn->real_escape_string($_POST['location']);
+    $name = $conn->real_escape_string(trim($_POST['name']));
+    $description = $conn->real_escape_string(trim($_POST['description']));
+    $location = $conn->real_escape_string(trim($_POST['location']));
 
-    // Get Current Date
-    $created_date = date('Y-m-d');
-
-    // Default Members Count
-    $members = 0;
-
-    // Handle File Upload
-    $photo = $_FILES['photo'];
-    $upload_dir = 'uploads/';
-    $photo_path = $upload_dir . basename($photo['name']);
-    if (!move_uploaded_file($photo['tmp_name'], $photo_path)) {
-        $error = "Failed to upload photo.";
+    // Validate input
+    if (empty($name) || empty($description) || empty($location)) {
+        $error = "All fields are required.";
+    } elseif (strlen($name) > 255) {
+        $error = "Community name cannot exceed 255 characters.";
     } else {
-        // Insert into Database
-        $sql = "INSERT INTO community (name, created_date, photo, description, location, members)
-                VALUES ('$name', '$created_date', '$photo_path', '$description', '$location', $members)";
-        if ($conn->query($sql)) {
-            $success = "Community added successfully!";
+        // Get Current Date
+        $created_date = date('Y-m-d');
+
+        // Default Members Count
+        $members = 0;
+
+        // Handle File Upload
+        $photo = $_FILES['photo'];
+        $upload_dir = 'uploads/';
+        $photo_path = $upload_dir . time() . '_' . basename($photo['name']);
+
+        // Ensure upload directory exists
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0755, true);
+        }
+
+        if (!in_array(mime_content_type($photo['tmp_name']), ['image/jpeg', 'image/png', 'image/gif'])) {
+            $error = "Invalid file type. Only JPG, PNG, and GIF files are allowed.";
+        } elseif (!move_uploaded_file($photo['tmp_name'], $photo_path)) {
+            $error = "Failed to upload photo.";
         } else {
-            $error = "Error: " . $conn->error;
+            // Insert into Database
+            $sql = "INSERT INTO community (name, created_date, photo, description, location, members)
+                    VALUES ('$name', '$created_date', '$photo_path', '$description', '$location', $members)";
+            if ($conn->query($sql)) {
+                $success = "Community added successfully!";
+            } else {
+                $error = "Error: " . $conn->error;
+            }
         }
     }
 }
@@ -56,12 +74,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <h1 class="text-3xl font-bold mb-6">Add New Community</h1>
         <?php if ($error): ?>
         <div class="bg-red-500 text-white p-4 mb-4 rounded">
-            <?= $error ?>
+            <?= htmlspecialchars($error) ?>
         </div>
         <?php endif; ?>
         <?php if ($success): ?>
         <div class="bg-green-500 text-white p-4 mb-4 rounded">
-            <?= $success ?>
+            <?= htmlspecialchars($success) ?>
         </div>
         <?php endif; ?>
         <form method="POST" enctype="multipart/form-data" class="space-y-6">
