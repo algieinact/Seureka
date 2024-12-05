@@ -1,8 +1,29 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 session_start();
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.html');
     exit;
+}
+
+// Include Database Connection
+require_once 'db.php';
+
+// Fetch Communities from Database
+$communities = [];
+$sql = "SELECT * FROM community ORDER BY created_date DESC";
+$result = $conn->query($sql);
+
+if ($result === false) {
+    die("Database Query Failed: " . $conn->error);
+}
+
+if ($result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $communities[] = $row;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -114,10 +135,31 @@ if (!isset($_SESSION['user_id'])) {
                         <!-- More dates -->
                     </div>
                 </div>
-                <!-- Your Community -->
-                <div
-                    class=" bg-gray-800 border border-gray-100/20 p-6 rounded-lg shadow-lg backdrop-filter backdrop-blur-md bg-opacity-40">
-                    <h1 class="text-xl font-semibold text-center mb-4">Your Community</h1>
+                <!-- Your Community Section -->
+                <div class=" mx-16 mt-4 mb-8 flex flex-col min-h-screen">
+                    <section class="mb-12 mt-4">
+                        <h1 class="text-4xl font-bold">Your Community</h1>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                            <?php foreach ($communities as $community): ?>
+                            <div
+                                class="bg-gray-800 border border-gray-100/20 p-6 rounded-lg shadow-lg backdrop-filter backdrop-blur-md bg-opacity-40">
+                                <img src="<?= htmlspecialchars($community['photo'] ?: 'default.jpg') ?>"
+                                    alt="Community Image" class="w-full h-40 object-cover rounded-lg mb-4">
+                                <h2 class="text-xl font-semibold"><?= htmlspecialchars($community['name']) ?></h2>
+                                <p class="text-sm text-gray-400"><?= htmlspecialchars($community['description']) ?></p>
+                                <p class="text-xs text-gray-500 mt-2">
+                                    Location: <?= htmlspecialchars($community['location']) ?><br>
+                                    Members: <?= htmlspecialchars($community['members']) ?><br>
+                                    Created: <?= htmlspecialchars($community['created_date']) ?>
+                                </p>
+                            </div>
+                            <?php endforeach; ?>
+                            <?php if (empty($communities)): ?>
+                            <p class="text-gray-500">No communities available. <a href="add_community.php"
+                                    class="text-purple-400">Add one!</a></p>
+                            <?php endif; ?>
+                        </div>
+                    </section>
                 </div>
             </div>
 
