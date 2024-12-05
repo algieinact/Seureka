@@ -18,16 +18,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_user_id'])) {
     if ($deleteUserId == $_SESSION['user_id']) {
         $error = "You cannot delete your own account.";
     } else {
-        $stmt = $pdo->prepare("DELETE FROM users WHERE id = :id");
-        $stmt->execute([':id' => $deleteUserId]);
-        $success = "User successfully deleted.";
+        $stmt = $conn->prepare("DELETE FROM users WHERE id = ?");
+        $stmt->bind_param("i", $deleteUserId);
+        if ($stmt->execute()) {
+            $success = "User successfully deleted.";
+        } else {
+            $error = "Failed to delete user.";
+        }
+        $stmt->close();
     }
 }
 
 // Ambil semua pengguna
-$stmt = $pdo->prepare("SELECT id, username, email, role FROM users ORDER BY role DESC, username ASC");
+$stmt = $conn->prepare("SELECT id, username, email, role FROM users ORDER BY role DESC, username ASC");
 $stmt->execute();
-$users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$result = $stmt->get_result();
+$users = $result->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+
+// Ambil semua komunitas
+$stmt = $conn->prepare("SELECT id, name, created_date, photo, description, location, members FROM community ORDER BY created_date DESC");
+$stmt->execute();
+$result = $stmt->get_result();
+$communities = $result->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -36,6 +50,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -57,13 +72,17 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <?php endif; ?>
 
         <!-- Navigasi -->
-        <div class="flex gap-4 mb-6">
+        <div class="flex gap-4 mb-8">
             <a href="create_user.php" class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-700">Add New
                 User</a>
+            <a href="create_community.php" class="bg-purple-500 text-white px-6 py-2 rounded hover:bg-purple-700">Add
+                New
+                Community</a>
         </div>
 
+        <h1 class="text-3xl text-black font-bold mb-4">Pengguna</h1>
         <!-- Tabel Pengguna -->
-        <div class="overflow-x-auto bg-gray-300 rounded-lg shadow-md">
+        <div class="overflow-x-auto bg-gray-300 rounded-lg shadow-md mb-8">
             <table class="table-auto w-full border-collapse">
                 <thead class="bg-gray-200">
                     <tr>
@@ -80,8 +99,10 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <td class="border border-black px-4 py-2"><?php echo htmlspecialchars($user['id']); ?></td>
                         <td class="border border-black px-4 py-2"><?php echo htmlspecialchars($user['username']); ?>
                         </td>
-                        <td class="border border-black px-4 py-2"><?php echo htmlspecialchars($user['email']); ?></td>
-                        <td class="border border-black px-4 py-2"><?php echo htmlspecialchars($user['role']); ?></td>
+                        <td class="border border-black px-4 py-2"><?php echo htmlspecialchars($user['email']); ?>
+                        </td>
+                        <td class="border border-black px-4 py-2"><?php echo htmlspecialchars($user['role']); ?>
+                        </td>
                         <td class="border border-black px-4 py-2">
                             <a href="update_user.php?id=<?php echo htmlspecialchars($user['id']); ?>"
                                 class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700">Update</a>
@@ -96,6 +117,52 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <?php else: ?>
                             <span class="text-gray-500">Cannot Delete</span>
                             <?php endif; ?>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tabel Community -->
+        <h1 class="text-3xl text-black font-bold mb-4">Communities</h1>
+        <div class="overflow-x-auto bg-gray-300 rounded-lg shadow-md">
+            <table class="table-auto w-full border-collapse">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="border border-black px-4 py-2">ID</th>
+                        <th class="border border-black px-4 py-2">Name</th>
+                        <th class="border border-black px-4 py-2">Photo</th>
+                        <th class="border border-black px-4 py-2">Description</th>
+                        <th class="border border-black px-4 py-2">Location</th>
+                        <th class="border border-black px-4 py-2">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($communities as $community): ?>
+                    <tr class="text-center text-black">
+                        <td class="border border-black px-4 py-2"><?php echo htmlspecialchars($community['id']); ?></td>
+                        <td class="border border-black px-4 py-2"><?php echo htmlspecialchars($community['name']); ?>
+                        </td>
+                        <td class="border border-black px-4 py-2">
+                            <img src="<?php echo htmlspecialchars($community['photo']); ?>" alt="Photo"
+                                class="h-16 w-16 object-cover rounded">
+                        </td>
+                        <td class="border border-black px-4 py-2">
+                            <?php echo htmlspecialchars($community['description']); ?></td>
+                        <td class="border border-black px-4 py-2">
+                            <?php echo htmlspecialchars($community['location']); ?></td>
+                        <td class="border border-black px-4 py-2">
+                            <a href="update_community.php?id=<?php echo htmlspecialchars($community['id']); ?>"
+                                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700">Update</a>
+                            <form action="admin_dashboard.php" method="POST"
+                                onsubmit="return confirm('Are you sure you want to delete this community?');"
+                                class="inline">
+                                <input type="hidden" name="delete_community_id"
+                                    value="<?php echo htmlspecialchars($community['id']); ?>">
+                                <button type="submit"
+                                    class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">Delete</button>
+                            </form>
                         </td>
                     </tr>
                     <?php endforeach; ?>

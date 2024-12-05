@@ -18,9 +18,11 @@ if (isset($_GET['id'])) {
 }
 
 // Ambil data pengguna dari database
-$stmt = $pdo->prepare("SELECT * FROM users WHERE id = :id");
-$stmt->execute([':id' => $userId]);
-$user = $stmt->fetch();
+$stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->bind_param("i", $userId);
+$stmt->execute();
+$result = $stmt->get_result();
+$user = $result->fetch_assoc();
 
 if (!$user) {
     die('User not found.');
@@ -63,41 +65,55 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (empty($error)) {
             $hashedPassword = !empty($newPassword) ? password_hash($newPassword, PASSWORD_BCRYPT) : null;
 
-            $updateQuery = "UPDATE users SET username = :username, email = :email, profile_picture = :profile_picture, role = :role";
-            $params = [
-                ':username' => $username,
-                ':email' => $email,
-                ':profile_picture' => $profilePicture,
-                ':role' => $role,
-                ':id' => $userId
-            ];
+            // Query update data pengguna
+            $updateQuery = "UPDATE users SET username = ?, email = ?, profile_picture = ?, role = ?";
+            $params = [$username, $email, $profilePicture, $role];
 
-            if (empty($username) || empty($email) || empty($role)) {
-                die('All fields are required.');
+            if ($hashedPassword) {
+                $updateQuery .= ", password = ?";
+                $params[] = $hashedPassword;
             }
-        
-            try {
-                // Update data pengguna
-                $stmt = $pdo->prepare("UPDATE users SET username = :username, email = :email, role = :role WHERE id = :id");
-                $stmt->execute([
-                    ':username' => $username,
-                    ':email' => $email,
-                    ':role' => $role,
-                    ':id' => $userId
-                ]);
-        
+
+            $updateQuery .= " WHERE id = ?";
+            $params[] = $userId;
+
+            // Persiapkan query
+            $stmt = $conn->prepare($updateQuery);
+
+            if ($hashedPassword) {
+                $stmt->bind_param(
+                    "sssssi",
+                    $username,
+                    $email,
+                    $profilePicture,
+                    $role,
+                    $hashedPassword,
+                    $userId
+                );
+            } else {
+                $stmt->bind_param(
+                    "ssssi",
+                    $username,
+                    $email,
+                    $profilePicture,
+                    $role,
+                    $userId
+                );
+            }
+
+            // Eksekusi query
+            if ($stmt->execute()) {
                 // Redirect ke admin_dashboard dengan pesan sukses
                 header("Location: admin_dashboard.php?success=User updated successfully.");
                 exit;
-            } catch (PDOException $e) {
-                die('Error: ' . $e->getMessage());
+            } else {
+                $error = 'Failed to update user.';
             }
-        } else {
-            die('Invalid request method.');
-        }
+
+            $stmt->close();
         }
     }
-
+}
 ?>
 
 <!DOCTYPE html>
@@ -118,11 +134,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <?php if (!empty($error)): ?>
         <div class="bg-red-100 text-red-700 px-4 py-2 rounded mb-4">
             <?= htmlspecialchars($error); ?>
-        </div>
-        <?php endif; ?>
-        <?php if (!empty($success)): ?>
-        <div class="bg-green-100 text-green-700 px-4 py-2 rounded mb-4">
-            <?= htmlspecialchars($success); ?>
         </div>
         <?php endif; ?>
 
