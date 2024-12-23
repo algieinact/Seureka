@@ -36,6 +36,20 @@ $result = $stmt->get_result();
 $users = $result->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
+// Hitung jumlah role
+$stmt = $conn->prepare("SELECT role, COUNT(*) as count FROM users GROUP BY role");
+$stmt->execute();
+$result = $stmt->get_result();
+$roleCounts = [];
+while ($row = $result->fetch_assoc()) {
+    $roleCounts[$row['role']] = $row['count'];
+}
+$stmt->close();
+
+// SELECT role: Mengambil kolom role dari tabel users.
+// COUNT(*) as count: Menghitung jumlah baris (pengguna) dalam setiap grup role.
+// GROUP BY role: Mengelompokkan data berdasarkan nilai kolom role.
+
 // Ambil semua komunitas
 $stmt = $conn->prepare("SELECT id, name, created_date, photo, description, location, members FROM community ORDER BY created_date DESC");
 $stmt->execute();
@@ -80,7 +94,17 @@ $stmt->close();
                 Community</a>
         </div>
 
+        <!-- Statistik Pengguna -->
         <h1 class="text-3xl text-black font-bold mb-4">Pengguna</h1>
+        <div class="mb-4">
+            <p class="text-lg text-black">
+                Total Admin: <span class="font-bold"><?php echo $roleCounts['admin'] ?? 0; ?></span>
+            </p>
+            <p class="text-lg text-black">
+                Total User: <span class="font-bold"><?php echo $roleCounts['user'] ?? 0; ?></span>
+            </p>
+        </div>
+
         <!-- Tabel Pengguna -->
         <div class="overflow-x-auto bg-gray-300 rounded-lg shadow-md mb-8">
             <table class="table-auto w-full border-collapse">
