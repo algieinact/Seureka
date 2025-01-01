@@ -1,64 +1,96 @@
-<?php
-require 'db.php'; // Koneksi database
+<!DOCTYPE html>
+<html lang="en">
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = $_POST['username'];
-    $email = $_POST['email'];
-    $password = $_POST['password'];
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seureka - Register</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="./output.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
 
-    // Validasi input
-    if (empty($username) || empty($email) || empty($password)) {
-        die('All fields are required.');
-    }
+<body class="bg-black flex min-h-screen"
+    style="background-image: url('image/bgLogin.png'); background-size: cover; background-position: center; background-repeat: no-repeat;">
 
-    // Hash password
-    $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+    <div class="flex container px-16 items-center text-white">
+        <!-- Kotak Register -->
+        <div
+            class="backdrop-filter backdrop-blur-md bg-opacity-35 border border-purple-900 rounded-lg p-8 w-full max-w-md">
+            <h2 class="text-3xl font-bold mb-6">Register</h2>
+            <form action="register.php" method="POST" class="space-y-4">
+                <!-- Firs/Last Name -->
+                <!-- <div>
+                    <div class="flex items-center justify-between gap-6">
+                        <div>
+                            <label for="first_name" class="block text-sm font-medium text-gray-300 mb-1">First Name</label>
+                            <input 
+                                type="text" 
+                                id="first_name" 
+                                name="first_name" 
+                                placeholder="Your First Name" 
+                                class="w-full px-4 py-2 border border-gray-800 bg-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-700 "
+                                required
+                            >
+                        </div>
+                        <div>
+                            <label for="last_name" class="block text-sm font-medium text-gray-300 mb-1">Last Name</label>
+                            <input 
+                                type="text" 
+                                id="last_name" 
+                                name="last_name" 
+                                placeholder="Yout First Name" 
+                                class="w-full px-4 py-2 border border-gray-800 bg-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-700 "
+                                required
+                            >
+                        </div>
+                    </div>
+                </div> -->
 
-    // Role selalu user untuk pendaftaran via form
-    $role = 'user';
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-300 mb-1">Username</label>
+                    <input type="text" id="username" name="username" placeholder="Choose a username"
+                        class="w-full px-4 py-2 border border-gray-800 bg-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-700 "
+                        required>
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email"
+                        class="w-full px-4 py-2 border border-gray-800 bg-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-700 "
+                        required>
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-300 mb-1">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter a password"
+                        class="w-full px-4 py-2 border border-gray-800 bg-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-700 "
+                        required>
+                </div>
+                <div>
+                    <label for="confirm-password" class="block text-sm font-medium text-gray-300 mb-1">Confirm
+                        Password</label>
+                    <input type="password" id="confirm-password" name="confirm_password"
+                        placeholder="Confirm your password"
+                        class="w-full px-4 py-2 border border-gray-800 bg-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-700 "
+                        required>
+                </div>
+                <div>
+                    <label for="profile_picture" class="block text-sm font-medium text-gray-300 mb-1">Profile
+                        Picture</label>
+                    <input type="file" id="profile_picture" name="profile_picture" accept="image/*" class="w-full">
+                </div>
+                <div class="flex flex-col items-center">
+                    <a href="login.html" type="submit"
+                        class="bg-purple-700 text-center text-white font-semibold w-full py-3 rounded-md hover:bg-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 mb-4">
+                        Register
+                    </a>
+                    <p class="text-sm text-gray-500">
+                        Already have an account?
+                        <a href="login.html" class="text-purple-600 hover:underline">Login</a>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
 
-    // Variabel untuk menyimpan nama file foto profil
-    $profilePicture = null;
-
-    // Proses upload file
-    if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] == UPLOAD_ERR_OK) {
-        $uploadDir = 'uploads/';
-        $fileName = time() . '_' . basename($_FILES['profile_picture']['name']); // Nama file unik
-        $uploadFile = $uploadDir . $fileName;
-
-        // Pastikan folder upload ada
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-
-        // Pindahkan file ke folder tujuan
-        if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $uploadFile)) {
-            $profilePicture = $fileName; // Simpan nama file untuk database
-        } else {
-            die('Failed to upload profile picture.');
-        }
-    }
-
-    // Simpan ke database
-    $stmt = $pdo->prepare("INSERT INTO users (username, email, password, role, profile_picture) VALUES (:username, :email, :password, :role, :profile_picture)");
-    try {
-        $stmt->execute([
-            ':username' => $username,
-            ':email' => $email,
-            ':password' => $hashedPassword,
-            ':role' => $role,
-            ':profile_picture' => $profilePicture
-        ]);
-        echo '<script>
-                alert("Registration successful!");
-                window.location.href = "login.html";
-              </script>';
-    } catch (PDOException $e) {
-        // Tangani error jika username atau email sudah terdaftar
-        if ($e->getCode() == 23000) { // Duplicate entry
-            die('Username or Email already exists.');
-        }
-        die('Error: ' . $e->getMessage());
-    }
-}
-?>
+</html>
